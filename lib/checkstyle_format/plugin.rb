@@ -43,7 +43,17 @@ module Danger
       system "./gradlew #{gradle_task}"
 
       raise "Please specify file name." if file.empty?
-      raise "No checkstyle file was found at #{file}" unless File.exist? file
+      
+      unless File.exist?(file)
+        file = File.new("build/reports/ktlint/ktlint-checkstyle.xml", "w")
+        require 'nokogiri'
+        builder = Nokogiri::XML::Builder.new do |xml|
+          xml.checkstyle('version' => '8.0')
+        end
+        file.puts(builder.to_xml)
+        file.close
+      end
+      
       errors = parse(File.read(file))
 
       send_comment(errors, inline_mode)
